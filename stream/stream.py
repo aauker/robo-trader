@@ -58,7 +58,7 @@ def alpaca_to_firehose(firehose, i):
         "close_price": i["c"], 
         "volume":      i["v"],
         "bar_time":    datetime.strptime(i["t"], '%Y-%m-%dT%H:%M:%SZ').timestamp(),
-        "real_time":   datetime.now().timestamp()
+        "seen_time":   datetime.now().timestamp()
     }
     logger.info(f"Pushing record: {json.dumps(item)}")
     response = firehose.put_record (
