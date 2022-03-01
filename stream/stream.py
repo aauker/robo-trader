@@ -60,12 +60,12 @@ def alpaca_to_firehose(firehose, i):
         "bar_time":    datetime.strptime(i["t"], '%Y-%m-%dT%H:%M:%SZ').timestamp(),
         "first_seen_time":   datetime.now().timestamp()
     }
-    logger.info(f"Pushing record: {json.dumps(item)}")
+    logger.info(f"Pushing record: {item}")
     response = firehose.put_record (
         DeliveryStreamName=delivery_stream_name,
         Record={'Data': json.dumps(item)}
     )
-    logger.info ( "Response ID: {0}, status code: {1}".format( response['ResponseMetadata']['RequestId'], ", status code:", response['ResponseMetadata']['HTTPStatusCode'] ) )
+    logger.info ( "Response ID: {0}, status code: {1}".format( response['ResponseMetadata']['RequestId'], response['ResponseMetadata']['HTTPStatusCode'] ) )
 
 
 if __name__ == '__main__':
