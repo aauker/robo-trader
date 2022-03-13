@@ -1,26 +1,21 @@
 from concurrent.futures import ThreadPoolExecutor
 import websocket  
-import os
 import json
 import boto3
 from datetime import datetime
-import configparser
+
+from utils import get_config, get_app_logger
 
 from concurrent.futures import ThreadPoolExecutor
 
-import logging
-logging.basicConfig(format="[%(asctime)s] [%(name)s] %(levelname)s: %(message)s")
-logger = logging.getLogger('alpaca2firehose')
-logger.setLevel(logging.INFO)
+logger = get_app_logger('stream-alpaca-news')
 logger.info ("Hello from alpaca2firehose!")
 
-config = configparser.ConfigParser()
-config.read('/.aws/alpaca2firehose')
+config = get_config()
 
+socket = config['alpaca']['ALPACA_MARKET_NEWS_SOCKET']
 delivery_stream_name = config['firehose']['STREAM_NAME']
-
 firehose = boto3.Session().client('firehose')
-
 executor = ThreadPoolExecutor(4)
 
 logger.info(f"Started firehose @ {delivery_stream_name}")
@@ -33,7 +28,7 @@ def on_open(ws):
     ws.send(json.dumps(auth_data))
     
     #subscribe to minute bars for all stocks
-    listen_message = {"action": "subscribe", "bars": ["*"]}
+    listen_message = {"action": "subscribe", "news": ["*"]}
 
     ws.send(json.dumps(listen_message))
     
@@ -50,26 +45,25 @@ def on_error(ws, error):
     logger.error(f"Recieved some error: {error}")
 
 def alpaca_to_firehose(firehose, i):
-    item={
-        "ticker":      i["S"],
-        "open_price":  i["o"],
-        "high_price":  i["h"],
-        "low_price":   i["l"],
-        "close_price": i["c"], 
-        "volume":      i["v"],
-        "bar_time":    datetime.strptime(i["t"], '%Y-%m-%dT%H:%M:%SZ').timestamp(),
-        "first_seen_time":   datetime.now().timestamp()
-    }
-    logger.info(f"Pushing record: {item}")
-    response = firehose.put_record (
-        DeliveryStreamName=delivery_stream_name,
-        Record={'Data': json.dumps(item)}
-    )
-    logger.info ( "Response ID: {0}, status code: {1}".format( response['ResponseMetadata']['RequestId'], response['ResponseMetadata']['HTTPStatusCode'] ) )
+    # item={
+    #     "ticker":      i["S"],
+    #     "open_price":  i["o"],
+    #     "high_price":  i["h"],
+    #     "low_price":   i["l"],
+    #     "close_price": i["c"], 
+    #     "volume":      i["v"],
+    #     "bar_time":    datetime.strptime(i["t"], '%Y-%m-%dT%H:%M:%SZ').timestamp(),
+    #     "first_seen_time":   datetime.now().timestamp()
+    # }
+    # logger.info(f"Pushing record: {item}")
+    # response = firehose.put_record (
+    #     DeliveryStreamName=delivery_stream_name,
+    #     Record={'Data': json.dumps(item)}
+    # )
+    # logger.info ( "Response ID: {0}, status code: {1}".format( response['ResponseMetadata']['RequestId'], response['ResponseMetadata']['HTTPStatusCode'] ) )
 
 
 if __name__ == '__main__':
-    socket = 'wss://stream.data.alpaca.markets/v2/iex'
-    logger.info ("Ready to stream stock data from wss://stream.data.alpaca.markets/v2/iex")
+    logger.info (f"Ready to stream stock data from {socket}")
     ws = websocket.WebSocketApp(socket, on_open=on_open, on_message=on_message, on_error=on_error, on_close=on_close)
     ws.run_forever()

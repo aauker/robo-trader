@@ -8,9 +8,11 @@ RUN pip --no-cache-dir install --upgrade pip && \
 
 RUN pip --no-cache-dir install boto3 datetime websocket-client[optional] configparser
 
-COPY stream.py /stream.py
+COPY . /robo-trader
 
+ENV ROOT_CFG_DIR=/
 ENV AWS_CONFIG_FILE=/.aws/config
 ENV AWS_SHARED_CREDENTIALS_FILE=/.aws/credentials
 
-CMD ["tini", "--", "python3", "/stream.py"]
+WORKDIR /robo-trader
+CMD ["tini", "--", "python3", "-m", "stream-alpaca-news.stream"]
