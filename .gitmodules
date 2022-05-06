@@ -1,0 +1,3 @@
+[submodule "tseries-patterns"]
+	path = tseries-patterns
+	url = git@github.com:tr8dr/tseries-patterns.git
